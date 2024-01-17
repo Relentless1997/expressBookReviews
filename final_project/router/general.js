@@ -20,52 +20,55 @@ public_users.post("/register", (req,res) => {
     return res.status(300).json({message: "Yet to be implemented"});
 });
 
+// Helper functions
+function getBooks() {
+    return new Promise((resolve, reject) => {
+        resolve(books);
+    });
+}
+
+function getBooksByISBN(isbn) {
+    return new Promise((resolve, reject) => {
+        let isbnNum = parseInt(isbn);
+        if (books[isbnNum]) {
+            resolve(books[isbnNum]);
+        } else {
+            reject({status:404, message:`Book: ${isbn} not found`});
+        }
+    })
+}
+
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
-    res.send(JSON.stringify(books,null,5))
-    return res.status(300).json({message: "Yet to be implemented"});
+    getBooks()
+        .then((books)=> res.send(JSON.stringify(books, null, 4)));
 });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
-    let isbn = req.params.isbn;
-    let book = books[isbn]
-    res.send(JSON.stringify(book,null,4));
-    return res.status(300).json({message: "Yet to be implemented"});
- });
+    getBooksByISBN(req.params.isbn)
+    .then(
+        result => res.send(result),
+        error => res.status(error.status).json({message: error.message})
+    );
+});
   
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
-    let author = req.params.author
-    let result = {
-        "booksByAuthor": []
-    }
-    let keys = Object.keys(books)
-    for(let key of keys) {
-        let book = books[key]
-        if(book.author == author) {
-            result['booksByAuthor'].push(book)
-        }
-    }
-    res.send(result)
-    return res.status(300).json({message: "Yet to be implemented"});
+    const author = req.params.author;
+    getBooks()
+    .then((bookEntries) => Object.values(bookEntries))
+    .then((books) => books.filter((book) => book.author === author))
+    .then((filteredBooks) => res.send(filteredBooks));
 });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
-    let title = req.params.title
-    let result = {
-        "booksByTitle": []
-    }
-    let keys = Object.keys(books)
-    for(let key of keys) {
-        let book = books[key]
-        if(book.title == title) {
-            result['booksByTitle'].push(book)
-        }
-    }
-    res.send(result)
-    return res.status(300).json({message: "Yet to be implemented"});
+    const title = req.params.title;
+    getBooks()
+    .then((bookEntry) => Object.values(bookEntry))
+    .then((books) => books.filter((book) => book.title === title))
+    .then((filteredBooks) => res.send(filteredBooks));
 });
 
 //  Get book review
